@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>위 여백 추가된 플래시카드</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f0f0f0;
+    }
+
+    .container {
+      margin-top: 567px; /* 약 15cm 여백 */
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+      padding: 20px;
+    }
+
+    .card {
+      width: 240px;
+      height: 165px;
+      perspective: 1000px;
+      cursor: pointer;
+    }
+
+    .card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transition: transform 0.6s;
+      transform-style: preserve-3d;
+    }
+
+    .card.flipped .card-inner {
+      transform: rotateY(180deg);
+    }
+
+    .card-front, .card-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      backface-visibility: hidden;
+      font-size: 60px;
+      font-weight: bold;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      text-align: center;
+      padding: 10px;
+    }
+
+    .card-back {
+      transform: rotateY(180deg);
+      color: black;
+    }
+
+    .highlight {
+      color: red;
+    }
+
+    .rest {
+      color: black;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container"></div>
+
+<script>
+const words = [
+  { word: "brag", meaning: "자랑하다", mp3: "brag--_us_1.mp3" },
+  { word: "bran", meaning: "곡물의 겨", mp3: "bran--_us_1.mp3" },
+  { word: "brant", meaning: "기러기 종류", mp3: "brant--_us_1.mp3" },
+  { word: "brash", meaning: "성급한", mp3: "brash--_us_1.mp3" },
+  { word: "brass", meaning: "황동, 금관악기", mp3: "brass--_us_1.mp3" },
+  { word: "brad", meaning: "작은 못", mp3: "brad--_us_1.mp3" },
+  { word: "brand", meaning: "상표", mp3: "brand--_us_1.mp3" },
+  { word: "brunt", meaning: "주된 충격", mp3: "brunt--_us_1.mp3" },
+  { word: "brush", meaning: "솔, 솔질하다", mp3: "brush--_us_1.mp3" },
+  { word: "crab", meaning: "게", mp3: "crab--_us_1.mp3" },
+  { word: "cramp", meaning: "쥐, 경련", mp3: "cramp--_us_1.mp3" },
+  { word: "crash", meaning: "충돌하다", mp3: "crash--_us_1.mp3" },
+  { word: "crass", meaning: "무례한", mp3: "crass--_us_1.mp3" },
+  { word: "cress", meaning: "물냉이류 식물", mp3: "cress--_us_1.mp3" },
+  { word: "crest", meaning: "꼭대기, 볏", mp3: "crest--_us_1.mp3" },
+  { word: "crib", meaning: "아기 침대", mp3: "crib--_us_1.mp3" },
+  { word: "crisp", meaning: "바삭한", mp3: "crisp--_us_1.mp3" },
+  { word: "crush", meaning: "눌러부수다", mp3: "crush--_us_1.mp3" },
+  { word: "crux", meaning: "핵심", mp3: "crux--_us_1.mp3" }
+];
+
+const baseUrl = "https://ssl.gstatic.com/dictionary/static/sounds/oxford/";
+const colors = ["#FFDDC1", "#C1FFD7", "#D1C1FF", "#FFE4C1", "#C1E4FF", "#FFC1C1", "#D1FFC1", "#E0C1FF", "#FFFAC1"];
+
+const container = document.querySelector('.container');
+
+words.forEach((item, index) => {
+  const audioId = `audio-${index}`;
+  const prefix = item.word.startsWith("br") ? "br" :
+                 item.word.startsWith("cr") ? "cr" : "";
+  const rest = item.word.slice(2);
+
+  const card = document.createElement("div");
+  card.className = "card";
+  card.innerHTML = `
+    <div class="card-inner">
+      <div class="card-front" style="background-color: ${colors[index % colors.length]}">
+        <span class="highlight">${prefix}</span><span class="rest">${rest}</span>
+      </div>
+      <div class="card-back" style="background-color: ${colors[(index + 3) % colors.length]}">${item.meaning}</div>
+    </div>
+    <audio id="${audioId}" preload="auto" src="${baseUrl}${item.mp3}"></audio>
+  `;
+
+  card.addEventListener("click", () => {
+    card.classList.toggle("flipped");
+    const audio = document.getElementById(audioId);
+    audio.currentTime = 0;
+    audio.play();
+  });
+
+  container.appendChild(card);
+});
+</script>
+
+</body>
+</html>
