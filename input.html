@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>발음 듣고 철자 맞히기 퀴즈</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 30px;
+    }
+    .question {
+      margin-bottom: 25px;
+      padding: 10px;
+      border-bottom: 1px solid #ccc;
+    }
+    button, input {
+      margin-left: 10px;
+      padding: 5px;
+      font-size: 16px;
+    }
+    .correct {
+      color: green;
+      font-weight: bold;
+    }
+    .incorrect {
+      color: red;
+      font-weight: bold;
+    }
+    a {
+      font-size: 14px;
+      margin-left: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>버튼을 눌러 발음을 듣고 철자를 입력하세요</h2>
+
+  <div id="quiz"></div>
+
+  <script>
+    const words = ["brash", "brisk", "brush", "crash", "crush", "craft", "crump", "trump"];
+
+    const quizContainer = document.getElementById("quiz");
+
+    words.forEach((word, index) => {
+      const div = document.createElement("div");
+      div.className = "question";
+
+      div.innerHTML = `
+        <b>${index + 1}. </b>
+        <button onclick="playTTS('${word}')">▶ 발음 듣기</button>
+        <a href="https://dictionary.cambridge.org/pronunciation/english/${word}" target="_blank">🔗 사전에서 듣기</a>
+        <br><br>
+        <input type="text" id="input-${index}" placeholder="단어 입력" />
+        <button onclick="checkAnswer(${index}, '${word}')">정답 확인</button>
+        <span id="result-${index}" style="margin-left:10px;"></span>
+      `;
+
+      quizContainer.appendChild(div);
+    });
+
+    function playTTS(word) {
+      const utterance = new SpeechSynthesisUtterance(word);
+      utterance.lang = "en-US";
+      utterance.rate = 0.9;
+      speechSynthesis.speak(utterance);
+    }
+
+    function checkAnswer(index, correctWord) {
+      const input = document.getElementById(`input-${index}`).value.trim().toLowerCase();
+      const result = document.getElementById(`result-${index}`);
+
+      if (input === correctWord) {
+        result.textContent = "✅ 정답입니다!";
+        result.className = "correct";
+      } else {
+        result.textContent = "❌ 오답입니다.";
+        result.className = "incorrect";
+      }
+    }
+  </script>
+
+</body>
+</html>
