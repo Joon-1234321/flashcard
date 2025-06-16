@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Power Voca</title>
+  <style>
+    html, body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #f0f8ff, #ffe4e1);
+      height: 100%;
+      overflow-x: hidden;
+    }
+    .page {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      padding: 40px 20px;
+      text-align: center;
+      animation: fadeIn 1s ease-in-out;
+    }
+    .active {
+      display: flex;
+    }
+    h1 {
+      font-size: 48px;
+      color: #ff1493;
+      text-shadow: 2px 2px 4px #aaa;
+    }
+    button {
+      background-color: #ff69b4;
+      border: none;
+      padding: 15px 30px;
+      color: white;
+      font-size: 18px;
+      border-radius: 30px;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      transition: transform 0.2s;
+    }
+    button:hover {
+      transform: scale(1.05);
+    }
+    input[type="text"] {
+      padding: 10px;
+      font-size: 18px;
+      border: 2px solid #ff69b4;
+      border-radius: 8px;
+      width: 200px;
+      margin: 10px;
+    }
+    .feedback {
+      font-size: 20px;
+      margin-top: 10px;
+    }
+    .correct { color: green; font-weight: bold; }
+    .wrong { color: red; font-weight: bold; }
+    @keyframes fadeIn {
+      from {opacity: 0; transform: translateY(20px);}
+      to {opacity: 1; transform: translateY(0);}
+    }
+  </style>
+</head>
+<body oncontextmenu="return false">
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      document.body.addEventListener('copy', e => e.preventDefault());
+      document.body.addEventListener('paste', e => e.preventDefault());
+      document.body.addEventListener('cut', e => e.preventDefault());
+      document.querySelectorAll('input[type="text"]').forEach(input => {
+        input.onpaste = e => e.preventDefault();
+        input.oncopy = e => e.preventDefault();
+        input.oncut = e => e.preventDefault();
+        input.oncontextmenu = e => e.preventDefault();
+      });
+    });
+  </script>
+
+  <div class="page active" id="welcomePage">
+    <h1>Welcome to Power Voca</h1>
+    <button onclick="startApp()">시작하기</button>
+  </div>
+
+  <div class="page" id="wordPage">
+    <h1 id="wordTitle"></h1>
+    <button onclick="playSound()">🔊 듣기</button><br>
+    <input type="text" id="spellInput" placeholder="정답 입력">
+    <button onclick="checkAnswer()">확인</button>
+    <div class="feedback" id="feedback"></div>
+    <div id="repeatSection" style="margin-top:30px; display:none;">
+      <h3>10회 입력 연습</h3>
+      <div id="repeatInputs"></div>
+      <button onclick="checkRepeats()">확인</button>
+      <div class="feedback" id="repeatFeedback"></div>
+    </div>
+    <div style="margin-top:30px;">
+      <button id="nextBtn" onclick="nextWord()" disabled>다음 단어 ▶</button>
+    </div>
+  </div>
+
+  <script>
+    const words = [
+      "active", "captive", "massive", "passive", "reactive",
+      "adaptive", "addictive", "attractive", "expansive", "excessive"
+    ];
+    const audioLinks = {
+      active: "https://www.oxfordlearnersdictionaries.com/media/english/us_pron/a/act/activ/active__us_1.mp3",
+      captive: "https://www.oxfordlearnersdictionaries.com/media/english/us_pron/c/cap/capti/captive__us_1.mp3",
+      massive: "https://www.oxfordlearnersdictionaries.com/media/english/us_pron/m/mas/massi/massive__us_1.mp3",
+            reactive: "https://www.oxfordlearnersdictionaries.com/media/english/us_pron/r/rea/react/reactive__us_1.mp3",
+      adaptive: "https://www.oxfordlearnersdictionaries.com/media/english/us_pron/a/ada/adapt/adaptive__us_1.mp3",
+      addictive: "https://www.oxfordlearnersdictionaries.com/media/english/us_pron/a/add/addic/addictive__us_1.mp3",
+      attractive: "https://www.oxfordlearnersdictionaries.com/media/english/us_pron/a/att/attra/attractive__us_1.mp3",
+      expansive: "https://www.oxfordlearnersdictionaries.com/media/english/us_pron/e/exp/expan/expansive__us_1.mp3",
+      excessive: "https://www.oxfordlearnersdictionaries.com/media/english/us_pron/e/exc/exces/excessive__us_1.mp3"
+    };
+
+    let current = 0;
+    let attempts = 0;
+    let hasPlayed = false;
+
+    function startApp() {
+      document.getElementById('welcomePage').classList.remove('active');
+      document.getElementById('wordPage').classList.add('active');
+      loadWord();
+    }
+
+    function loadWord() {
+      hasPlayed = false;
+      attempts = 0;
+      const word = words[current];
+      document.getElementById("wordTitle").innerText = `단어 ${current + 1}`;
+      document.getElementById("spellInput").value = "";
+      document.getElementById("feedback").innerHTML = "";
+      document.getElementById("repeatFeedback").innerHTML = "";
+      document.getElementById("repeatSection").style.display = "none";
+      document.getElementById("nextBtn").disabled = true;
+      const repeatDiv = document.getElementById("repeatInputs");
+      repeatDiv.innerHTML = "";
+      for (let i = 0; i < 10; i++) {
+        const input = document.createElement("input");
+        input.type = "text";
+        input.id = `repeat${i}`;
+        input.setAttribute('onpaste', 'return false');
+        input.setAttribute('oncopy', 'return false');
+        input.setAttribute('oncut', 'return false');
+        input.setAttribute('oncontextmenu', 'return false');
+        repeatDiv.appendChild(input);
+        repeatDiv.appendChild(document.createElement("br"));
+      }
+    }
+
+    function playSound() {
+      const word = words[current];
+      const audio = new Audio(audioLinks[word]);
+      audio.play();
+      hasPlayed = true;
+    }
+
+    function checkAnswer() {
+      if (!hasPlayed) {
+        document.getElementById("feedback").innerHTML = `<span class='wrong'>먼저 듣고 입력하세요 🔊</span>`;
+        return;
+      }
+      const input = document.getElementById("spellInput").value.trim().toLowerCase();
+      const feedback = document.getElementById("feedback");
+      const word = words[current];
+
+      if (input === word) {
+        feedback.innerHTML = `<span class='correct'>정답입니다!</span>`;
+        document.getElementById("repeatSection").style.display = "block";
+        setTimeout(() => document.getElementById("repeatSection").scrollIntoView({ behavior: 'smooth' }), 300);
+      } else {
+        attempts++;
+        if (attempts >= 3) {
+          feedback.innerHTML = `<span class='wrong'>오답입니다. 정답은 <strong>${word}</strong>입니다.</span>`;
+          document.getElementById("repeatSection").style.display = "block";
+          setTimeout(() => document.getElementById("repeatSection").scrollIntoView({ behavior: 'smooth' }), 300);
+        } else {
+          feedback.innerHTML = `<span class='wrong'>오답입니다. (${3 - attempts}번 남음)</span>`;
+        }
+      }
+    }
+
+    function checkRepeats() {
+      const word = words[current];
+      let correct = 0;
+      for (let i = 0; i < 10; i++) {
+        const val = document.getElementById(`repeat${i}`).value.trim().toLowerCase();
+        if (val === word) correct++;
+      }
+      const feedback = document.getElementById("repeatFeedback");
+      if (correct === 10) {
+        feedback.innerHTML = `<span class='correct'>10회 모두 정확합니다! 🎉</span>`;
+        document.getElementById("nextBtn").disabled = false;
+      } else {
+        feedback.innerHTML = `<span class='wrong'>${10 - correct}개 틀렸습니다. 다시 확인해보세요.</span>`;
+        document.getElementById("nextBtn").disabled = true;
+      }
+    }
+
+    function nextWord() {
+      if (current < words.length - 1) {
+        current++;
+        loadWord();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        alert("모든 단어 연습을 완료했습니다!");
+        location.reload();
+      }
+    }
+  </script>
+</body>
+</html>
