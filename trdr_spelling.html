@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Spelling Practice - tr/dr words</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 2rem;
+      background: #fdfcff;
+    }
+    button {
+      font-size: 1rem;
+      margin: 0.3rem;
+      padding: 0.5rem 1rem;
+    }
+    input {
+      font-size: 1rem;
+      margin: 0.3rem 0.2rem;
+      padding: 0.3rem;
+    }
+    .card {
+      border: 1px solid #ccc;
+      padding: 1rem;
+      margin-bottom: 2rem;
+      border-radius: 10px;
+      background: #f0f8ff;
+      display: none;
+    }
+    .card.active {
+      display: block;
+    }
+    .repeat-input {
+      display: block;
+      margin: 0.2rem 0;
+    }
+    .message {
+      margin-top: 0.5rem;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>Spelling Practice: tr- / dr- words</h1>
+  <div id="container"></div>
+
+  <script>
+    const words = [
+  "trap", "trip", "trim", "track", "truck", "trunk", "trash",
+  "drag", "drip", "drum", "drop", "dress", "drill", "drank"
+];
+
+    const container = document.getElementById("container");
+    let currentIndex = 0;
+    const attempts = {};
+
+    function speak(text) {
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = "en-US";
+  utterance.rate = 0.85;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utterance);
+}
+
+    function renderCard(word, index) {
+      const card = document.createElement("div");
+      card.className = "card";
+      if (index === 0) card.classList.add("active");
+      card.id = `card-${word}`;
+
+      card.innerHTML = `
+        <h2>Practice ${index + 1}</h2>
+        <button onclick="speak('${word}')">🔊 Listen</button>
+        <input type="text" id="${word}-input" autocomplete="off" onpaste="return false;">
+        <button onclick="checkAnswer('${word}', ${index})">Check</button>
+        <div id="${word}-message" class="message"></div>
+        <div id="${word}-repeat-section" style="display:none">
+          <h4>Write the word 10 times</h4>
+          <div id="${word}-repeats"></div>
+          <button onclick="checkRepeats('${word}', ${index})">Submit</button>
+        </div>
+      `;
+
+      container.appendChild(card);
+    }
+
+    function checkAnswer(word, index) {
+      const input = document.getElementById(`${word}-input`).value.trim().toLowerCase();
+      const message = document.getElementById(`${word}-message`);
+
+      if (!attempts[word]) attempts[word] = 0;
+
+      if (input === word) {
+        message.textContent = "✅ Correct! Now write it 10 times below.";
+        showRepeatInputs(word);
+      } else {
+        attempts[word]++;
+        if (attempts[word] < 3) {
+          message.textContent = `❌ Incorrect. Try again. (${3 - attempts[word]} attempts left)`;
+        } else {
+          message.textContent = `💡 The correct spelling is: '${word}'. Now write it 10 times below.`;
+          showRepeatInputs(word);
+        }
+      }
+    }
+
+    function showRepeatInputs(word) {
+      const section = document.getElementById(`${word}-repeat-section`);
+      const container = document.getElementById(`${word}-repeats`);
+      section.style.display = "block";
+      container.innerHTML = "";
+      for (let i = 1; i <= 10; i++) {
+        const input = document.createElement("input");
+        input.className = "repeat-input";
+        input.setAttribute("autocomplete", "off");
+        input.setAttribute("onpaste", "return false;");
+        input.setAttribute("placeholder", `#${i}`);
+        container.appendChild(input);
+      }
+    }
+
+    function checkRepeats(word, index) {
+      const inputs = document.querySelectorAll(`#${word}-repeats input`);
+      let allCorrect = true;
+      inputs.forEach(input => {
+        if (input.value.trim().toLowerCase() !== word) {
+          input.style.backgroundColor = "#ffd4d4";
+          allCorrect = false;
+        } else {
+          input.style.backgroundColor = "#d4ffd4";
+        }
+      });
+      if (allCorrect) {
+        moveToNextCard(index);
+      } else {
+        alert("❌ There are mistakes. Please correct them before moving on.");
+      }
+    }
+
+    function moveToNextCard(currentIndex) {
+      const currentCard = document.getElementById(`card-${words[currentIndex]}`);
+      currentCard.classList.remove("active");
+      const nextIndex = currentIndex + 1;
+      if (nextIndex < words.length) {
+        const nextCard = document.getElementById(`card-${words[nextIndex]}`);
+        nextCard.classList.add("active");
+      } else {
+        alert("🎉 Great job! You've completed all the words.");
+      }
+    }
+
+    words.forEach((word, index) => renderCard(word, index));
+  </script>
+</body>
+</html>
+
