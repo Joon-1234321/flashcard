@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>2단계 Power Voca</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f2f2f2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 30px;
+    }
+    h2 {
+      margin-bottom: 5px;
+    }
+    h3 {
+      margin-top: 0;
+      color: #333;
+    }
+    input[type="text"] {
+      font-size: 1.5em;
+      padding: 5px;
+      margin: 5px;
+      text-align: center;
+      width: 150px;
+    }
+    .spell-inputs input {
+      width: 60px;
+      text-transform: lowercase;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 1em;
+      margin: 10px;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<h2>Power Voca: 듣고 쓰기 학습</h2>
+<h3 id="problemNumber">1번 문제</h3>
+
+<div id="stage1">
+  <p><b>1단계:</b> 듣고 단어 쓰기</p>
+  <button onclick="playWord()">🔊 듣기</button><br>
+  <input type="text" id="input1" onpaste="return false;" placeholder="단어 입력" autocomplete="off" /><br>
+  <button onclick="checkAnswer()">확인</button>
+  <div id="message1"></div>
+</div>
+
+<div id="stage2" class="hidden">
+  <p><b>2단계:</b> 철자 반복 입력</p>
+  <div class="spell-inputs" id="repeatInputs"></div>
+  <button onclick="checkRepeat()">다음 단어로</button>
+  <div id="message2"></div>
+</div>
+
+<div id="complete" class="hidden">
+  <h2>🎉 축하합니다! 10개 단어를 모두 완성했습니다.</h2>
+</div>
+
+<script>
+const words = ["flag", "flat", "flip", "flesh", "flush", "plum", "plan", "plug", "plot", "plate"];
+let current = 0;
+let attempt = 0;
+
+function updateProblemNumber() {
+  document.getElementById("problemNumber").innerText = (current + 1) + "번 문제";
+}
+
+function playWord() {
+  const utter = new SpeechSynthesisUtterance("     " + words[current]);
+  utter.lang = "en-US";
+  utter.rate = 0.75;
+  speechSynthesis.speak(utter);
+}
+
+function checkAnswer() {
+  const input = document.getElementById("input1");
+  const msg = document.getElementById("message1");
+  const answer = input.value.trim().toLowerCase();
+  const correct = words[current];
+
+  if (answer === correct) {
+    msg.textContent = "정답입니다! 2단계로 이동합니다.";
+    showStage2(correct);
+  } else {
+    attempt++;
+    if (attempt >= 3) {
+      msg.textContent = "정답은 " + correct + " 입니다. 2단계로 이동합니다.";
+      showStage2(correct);
+    } else {
+      msg.textContent = "틀렸습니다. 다시 시도하세요. (" + attempt + "/3)";
+    }
+  }
+}
+
+function showStage2(correct) {
+  document.getElementById("stage1").classList.add("hidden");
+  document.getElementById("stage2").classList.remove("hidden");
+  const container = document.getElementById("repeatInputs");
+  container.innerHTML = "";
+  for (let i = 0; i < 10; i++) {
+    const inp = document.createElement("input");
+    inp.type = "text";
+    inp.setAttribute("maxlength", correct.length);
+    inp.setAttribute("onpaste", "return false;");
+    inp.dataset.correct = correct;
+    container.appendChild(inp);
+  }
+}
+
+function checkRepeat() {
+  const inputs = document.querySelectorAll("#repeatInputs input");
+  let allCorrect = true;
+  inputs.forEach(input => {
+    if (input.value.trim().toLowerCase() !== input.dataset.correct) {
+      allCorrect = false;
+    }
+  });
+  if (allCorrect) {
+    current++;
+    if (current >= words.length) {
+      document.getElementById("stage2").classList.add("hidden");
+      document.getElementById("complete").classList.remove("hidden");
+    } else {
+      attempt = 0;
+      document.getElementById("input1").value = "";
+      document.getElementById("message1").textContent = "";
+      document.getElementById("message2").textContent = "";
+      document.getElementById("stage2").classList.add("hidden");
+      document.getElementById("stage1").classList.remove("hidden");
+      updateProblemNumber();
+    }
+  } else {
+    document.getElementById("message2").textContent = "오답이 있습니다. 모두 맞아야 다음 단어로 넘어갈 수 있습니다.";
+  }
+}
+
+// 처음 시작할 때 문제 번호 표시
+updateProblemNumber();
+</script>
+
+</body>
+</html>
