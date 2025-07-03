@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Flashcards: sm/sn Words</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      padding: 30px;
+      background: #f5f5f5;
+    }
+    .card {
+      width: 180px;
+      height: 120px;
+      margin: 15px;
+      perspective: 1000px;
+    }
+    .inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transition: transform 0.6s;
+      transform-style: preserve-3d;
+      cursor: pointer;
+    }
+    .card.flipped .inner {
+      transform: rotateY(180deg);
+    }
+    .front, .back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5em;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      padding: 10px;
+      text-align: center;
+    }
+    .front {
+      background: #fef68a;
+    }
+    .back {
+      background: #b3e5fc;
+      transform: rotateY(180deg);
+    }
+    .card:nth-child(4n+1) .front { background: #ffd180; }
+    .card:nth-child(4n+2) .front { background: #a5d6a7; }
+    .card:nth-child(4n+3) .front { background: #ce93d8; }
+    .card:nth-child(4n+4) .front { background: #ffab91; }
+    .card:nth-child(4n+1) .back { background: #ffe082; }
+    .card:nth-child(4n+2) .back { background: #81d4fa; }
+    .card:nth-child(4n+3) .back { background: #ffccbc; }
+    .card:nth-child(4n+4) .back { background: #c5e1a5; }
+    .red {
+      color: red;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+<script>
+const wordList = [
+  { word: "smash", meaning: "때려 부수다" },
+  { word: "smack", meaning: "찰싹 때리다" },
+  { word: "smart", meaning: "똑똑한" },
+  { word: "smell", meaning: "냄새나다" },
+  { word: "smile", meaning: "미소 짓다" },
+  { word: "smite", meaning: "세게 치다" },
+  { word: "smoke", meaning: "연기" },
+  { word: "smuggle", meaning: "밀수하다" },
+  { word: "snack", meaning: "간식" },
+  { word: "snap", meaning: "딱 부러지다" },
+  { word: "sneeze", meaning: "재채기하다" },
+  { word: "sniff", meaning: "킁킁거리다" },
+  { word: "snip", meaning: "싹둑 자르다" },
+  { word: "snore", meaning: "코를 골다" },
+  { word: "snort", meaning: "콧김을 내뿜다" },
+];
+
+// sm 또는 sn으로 시작하면 해당 부분을 <span>으로 감싸서 붉은색 강조
+function highlightPrefix(word) {
+  const match = word.match(/^(sm|sn)/);
+  if (match) {
+    return '&nbsp;&nbsp;<span class="red">' + match[0] + '</span>' + word.slice(2);
+  } else {
+    return '&nbsp;&nbsp;' + word;
+  }
+}
+
+wordList.forEach(({ word, meaning }) => {
+  const card = document.createElement('div');
+  card.className = 'card';
+
+  card.innerHTML = `
+    <div class="inner">
+      <div class="front">${highlightPrefix(word)}</div>
+      <div class="back">${meaning}</div>
+    </div>
+  `;
+
+  card.addEventListener('click', () => {
+    const utter = new SpeechSynthesisUtterance(word);
+    utter.lang = "en-US"; // 영어 발음
+    utter.rate = 0.65;    // 약간 느리게
+    speechSynthesis.speak(utter);
+    card.classList.toggle('flipped');
+  });
+
+  document.body.appendChild(card);
+});
+</script>
+
+</body>
+</html>

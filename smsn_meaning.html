@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>뜻 맞추기 퀴즈 - 반복 학습 버전</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 40px;
+      background-color: #f0f8ff;
+    }
+    .question {
+      font-size: 28px;
+      margin-bottom: 20px;
+      cursor: pointer;
+      color: darkblue;
+    }
+    .options {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+      margin: 20px auto;
+      max-width: 400px;
+    }
+    button.option {
+      padding: 12px;
+      font-size: 18px;
+      width: 100%;
+      cursor: pointer;
+    }
+    .feedback {
+      font-size: 20px;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+    #nextBtn, #restartBtn {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin-top: 20px;
+      display: none;
+    }
+    #resultPage {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<h1>뜻 맞추기 퀴즈</h1>
+
+<div id="quizPage">
+  <div class="question" id="word" onclick="playAudio()">단어</div>
+  <div class="options">
+    <button class="option" onclick="checkAnswer(this)"></button>
+    <button class="option" onclick="checkAnswer(this)"></button>
+    <button class="option" onclick="checkAnswer(this)"></button>
+  </div>
+  <div class="feedback" id="feedback"></div>
+  <button id="nextBtn" onclick="nextQuestion()">다음 문제</button>
+</div>
+
+<div id="resultPage">
+  <h2>퀴즈 완료!</h2>
+  <p id="scoreSummary"></p>
+  <button id="restartBtn" onclick="startNextPhase()">재도전</button>
+</div>
+
+<script>
+const allWords = [
+  { word: "smash", meaning: "때려 부수다" },
+  { word: "smack", meaning: "찰싹 때리다" },
+  { word: "smart", meaning: "똑똑한" },
+  { word: "smell", meaning: "냄새나다" },
+  { word: "smile", meaning: "미소 짓다" },
+  { word: "smite", meaning: "세게 치다" },
+  { word: "smoke", meaning: "연기" },
+  { word: "smuggle", meaning: "밀수하다" },
+  { word: "snack", meaning: "간식" },
+  { word: "snap", meaning: "딱 부러지다" },
+  { word: "sneeze", meaning: "재채기하다" },
+  { word: "sniff", meaning: "킁킁거리다" },
+  { word: "snip", meaning: "싹둑 자르다" },
+  { word: "snore", meaning: "코를 골다" },
+  { word: "snort", meaning: "콧김을 내뿜다" }
+];
+
+let wordPool = [];
+let history = [];
+let phase = 1;
+let score = 0;
+let questionCount = 0;
+let currentWord = "";
+let currentAnswer = "";
+let tries = 0;
+let hasAnsweredCorrectly = false;
+
+function shuffle(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+}
+
+function playAudio() {
+  const utter = new SpeechSynthesisUtterance(currentWord);
+  utter.lang = "en-US";
+  utter.rate = 0.75;
+  speechSynthesis.speak(utter);
+}
+
+function startQuiz(initial = false) {
+  document.getElementById("quizPage").style.display = "block";
+  document.getElementById("resultPage").style.display = "none";
+  score = 0;
+  questionCount = 0;
+  history = [];
+  if (initial) {
+    shuffle(allWords);
+    wordPool = allWords.slice(0, 10);
+    phase = 1;
+  }
+  nextQuestion();
+}
+
+function nextQuestion() {
+  document.getElementById("feedback").innerText = "";
+  document.getElementById("nextBtn").style.display = "none";
+  hasAnsweredCorrectly = false;
+  tries = 0;
+
+  if (wordPool.length === 0) {
+    showResults();
+    return;
+  }
+
+  const idx = Math.floor(Math.random() * wordPool.length);
+  const wordObj = wordPool.splice(idx, 1)[0];
+  currentWord = wordObj.word;
+  currentAnswer = wordObj.meaning;
+  document.getElementById("word").innerText = currentWord;
+
+  const wrongs = allWords.filter(w => w.meaning !== currentAnswer);
+  shuffle(wrongs);
+  const choices = [currentAnswer, wrongs[0].meaning, wrongs[1].meaning];
+  shuffle(choices);
+
+  document.querySelectorAll(".option").forEach((btn, i) => {
+    btn.innerText = choices[i];
+    btn.disabled = false;
+  });
+}
+
+function checkAnswer(btn) {
+  if (hasAnsweredCorrectly) return;
+
+  tries++;
+  const selected = btn.innerText;
+  if (selected === currentAnswer) {
+    hasAnsweredCorrectly = true;
+    score++;
+    document.getElementById("feedback").innerText = "✅ 정답입니다!";
+    document.getElementById("feedback").style.color = "green";
+    document.getElementById("nextBtn").style.display = "inline-block";
+
+    document.querySelectorAll(".option").forEach(b => b.disabled = true);
+    history.push({ word: currentWord, tries: tries });
+  } else {
+    btn.disabled = true;
+    document.getElementById("feedback").innerText = "❌ 틀렸습니다. 다시 시도해보세요.";
+    document.getElementById("feedback").style.color = "red";
+  }
+}
+
+function showResults() {
+  document.getElementById("quizPage").style.display = "none";
+  document.getElementById("resultPage").style.display = "block";
+
+  if (phase < 3) {
+    const retryWords = history.filter(h => h.tries === 2 || h.tries === 3).map(h => h.word);
+    wordPool = retryWords.map(w => allWords.find(obj => obj.word === w));
+    document.getElementById("scoreSummary").innerText =
+      `총 점수: ${score} / ${history.length} (2~3번 시도한 단어 ${wordPool.length}개 다시 풀기)`;
+    document.getElementById("restartBtn").style.display = wordPool.length ? "inline-block" : "none";
+  } else {
+    const needsRetry = history.filter(h => h.tries > 1);
+    if (needsRetry.length === 0) {
+      document.getElementById("scoreSummary").innerText = "🎉 모든 단어를 첫 시도에 맞췄어요! 학습 완료!";
+      document.getElementById("restartBtn").style.display = "none";
+    } else {
+      wordPool = needsRetry.map(h => allWords.find(obj => obj.word === h.word));
+      document.getElementById("scoreSummary").innerText =
+        `⚠️ 아직 ${wordPool.length}개의 단어에서 첫 시도 오답이 있었어요. 다시 도전해보세요!`;
+      document.getElementById("restartBtn").style.display = "inline-block";
+    }
+  }
+}
+
+function startNextPhase() {
+  phase++;
+  history = [];
+  score = 0;
+  questionCount = 0;
+  startQuiz(false);
+}
+
+startQuiz(true);
+</script>
+
+</body>
+</html>
