@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ch로 끝나는 단어 플래시카드</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      background: #f0f0f0;
+      padding: 30px;
+    }
+    .card {
+      width: 180px;
+      height: 120px;
+      margin: 15px;
+      perspective: 1000px;
+    }
+    .inner {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transition: transform 0.6s;
+      transform-style: preserve-3d;
+      cursor: pointer;
+    }
+    .card.flipped .inner {
+      transform: rotateY(180deg);
+    }
+    .front, .back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 10px;
+      backface-visibility: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5em;
+      font-weight: bold;
+      text-align: center;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    .front { background: #ffe082; }
+    .back { background: #b3e5fc; transform: rotateY(180deg); }
+
+    .card:nth-child(odd) .front { background: #ffcc80; }
+    .card:nth-child(odd) .back { background: #81d4fa; }
+
+    .red { color: red; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+<script>
+let voices = [];
+window.speechSynthesis.onvoiceschanged = () => {
+  voices = speechSynthesis.getVoices();
+};
+
+function speakWord(word) {
+  const utter = new SpeechSynthesisUtterance(word);
+  utter.lang = "en-US";
+  utter.voice = voices.find(v => v.name === "Google US English") || null;
+  utter.rate = 0.85;
+  speechSynthesis.speak(utter);
+}
+
+const words = [
+  { word: "bench", meaning: "벤치, 긴 의자" },
+  { word: "lunch", meaning: "점심" },
+  { word: "peach", meaning: "복숭아" },
+  { word: "coach", meaning: "코치, 감독" },
+  { word: "beach", meaning: "해변" },
+  { word: "watch", meaning: "시계" },
+  { word: "witch", meaning: "마녀" },
+  { word: "pouch", meaning: "주머니" },
+  { word: "match", meaning: "경기, 성냥" },
+  { word: "batch", meaning: "한 묶음, 일괄" },
+  { word: "stitch", meaning: "바느질 땀, 꿰매다" },
+  { word: "speech", meaning: "연설" },
+  { word: "stretch", meaning: "늘이다, 뻗다" },
+  { word: "scratch", meaning: "긁다" }
+];
+
+function highlightCH(word) {
+  return word.replace(/ch$/, "<span class='red'>ch</span>");
+}
+
+words.forEach(({ word, meaning }) => {
+  const card = document.createElement("div");
+  card.className = "card";
+  card.innerHTML = `
+    <div class="inner">
+      <div class="front">${highlightCH("&nbsp;&nbsp;" + word)}</div>
+      <div class="back">${meaning}</div>
+    </div>
+  `;
+  card.addEventListener("click", () => {
+    speakWord(word);
+    card.classList.toggle("flipped");
+  });
+  document.body.appendChild(card);
+});
+</script>
+
+</body>
+</html>
+

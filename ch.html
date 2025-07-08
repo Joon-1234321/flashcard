@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>CH 단어 플래시카드</title>
+  <style>
+    body {
+      background: #f9f9f9;
+      font-family: sans-serif;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+      padding: 40px;
+    }
+    .card {
+      width: 200px;
+      height: 120px;
+      perspective: 1000px;
+      cursor: pointer;
+    }
+    .card-inner {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.6s;
+    }
+    .card.flipped .card-inner {
+      transform: rotateY(180deg);
+    }
+    .card-front, .card-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      font-size: 20px;
+      text-align: center;
+      color: white;
+    }
+    .blue-front { background: #4a90e2; }
+    .blue-back  { background: #7dc4f3; transform: rotateY(180deg); }
+    .green-front { background: #50e3c2; }
+    .green-back  { background: #85f3d6; transform: rotateY(180deg); }
+  </style>
+</head>
+<body>
+
+<script>
+  const words = [
+    { word: "chat", meaning: "수다를 떨다", audio: "https://www.oxfordlearnersdictionaries.com/media/english/us_pron/c/cha/chat_/chat__us_1.mp3" },
+    { word: "chart", meaning: "도표" },
+    { word: "charm", meaning: "매력" },
+    { word: "check", meaning: "확인하다", audio: "https://www.oxfordlearnersdictionaries.com/media/english/us_pron/c/che/check/check__us_1.mp3" },
+    { word: "chest", meaning: "가슴, 상자", audio: "https://www.oxfordlearnersdictionaries.com/media/english/us_pron/c/che/chest/chest__us_1.mp3" },
+    { word: "chip", meaning: "조각, 감자칩", audio: "https://www.oxfordlearnersdictionaries.com/media/english/us_pron/c/chi/chip_/chip__us_1.mp3" },
+    { word: "chin", meaning: "턱", audio: "https://www.oxfordlearnersdictionaries.com/media/english/us_pron/c/chi/chin_/chin__us_1.mp3" },
+    { word: "chill", meaning: "냉기, 식다", audio: "https://www.oxfordlearnersdictionaries.com/media/english/us_pron/c/chi/chill/chill__us_1.mp3" },
+    { word: "chop", meaning: "썰다, 자르다", audio: "https://www.oxfordlearnersdictionaries.com/media/english/us_pron/c/cho/chop_/chop__us_1.mp3" },
+    { word: "chunk", meaning: "덩어리", audio: "https://www.oxfordlearnersdictionaries.com/media/english/us_pron/c/chu/chunk/chunk__us_1.mp3" },
+    { word: "church", meaning: "교회", audio: "https://www.oxfordlearnersdictionaries.com/media/english/us_pron/c/chu/churc/church__us_1.mp3" },
+    { word: "chaos", meaning: "혼돈", audio: "https://www.oxfordlearnersdictionaries.com/media/english/us_pron/c/cha/chaos/chaos__us_1.mp3" },
+    { word: "chemical", meaning: "화학의", audio: "https://www.oxfordlearnersdictionaries.com/media/english/us_pron/c/che/chemi/chemical__us_1.mp3" },
+    { word: "chemist", meaning: "약사, 화학자", audio: "https://www.oxfordlearnersdictionaries.com/media/english/us_pron/c/che/chemi/chemist__us_1.mp3" },
+    { word: "chemistry", meaning: "화학", audio: "https://www.oxfordlearnersdictionaries.com/media/english/us_pron/c/che/chemi/chemistry__us_1.mp3" },
+    { word: "chord", meaning: "화음", audio: "https://www.oxfordlearnersdictionaries.com/media/english/us_pron/c/cho/chord/chord__us_1.mp3" },
+    { word: "chorus", meaning: "합창", audio: "https://www.oxfordlearnersdictionaries.com/media/english/us_pron/c/cho/choru/chorus__us_1.mp3" }
+  ];
+
+  function speakTTS(text) {
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = 'en-US';
+    utter.rate = 0.85;
+    speechSynthesis.speak(utter);
+  }
+
+  function playSound(entry) {
+    if (entry.audio) {
+      new Audio(entry.audio).play();
+    } else {
+      speakTTS(entry.word);
+    }
+  }
+
+  words.forEach((entry, i) => {
+    const card = document.createElement("div");
+    card.className = "card";
+
+    const inner = document.createElement("div");
+    inner.className = "card-inner";
+
+    const front = document.createElement("div");
+    const back = document.createElement("div");
+
+    if (i % 2 === 0) {
+      front.className = "card-front blue-front";
+      back.className = "card-back blue-back";
+    } else {
+      front.className = "card-front green-front";
+      back.className = "card-back green-back";
+    }
+
+    front.textContent = entry.word;
+    back.textContent = entry.meaning;
+
+    inner.appendChild(front);
+    inner.appendChild(back);
+    card.appendChild(inner);
+
+    card.addEventListener("click", () => {
+      playSound(entry);
+      card.classList.toggle("flipped");
+    });
+
+    document.body.appendChild(card);
+  });
+</script>
+
+</body>
+</html>
+

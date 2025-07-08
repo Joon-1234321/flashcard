@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>뜻 고르기 퀴즈</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 40px;
+    }
+    .question {
+      font-size: 28px;
+      margin-bottom: 20px;
+    }
+    .options button {
+      display: block;
+      margin: 10px auto;
+      padding: 10px;
+      font-size: 18px;
+      cursor: pointer;
+      min-width: 200px;
+      max-width: 400px;
+    }
+    #progress {
+      margin-top: 20px;
+    }
+    #retry {
+      margin-top: 30px;
+      display: none;
+    }
+    #result {
+      font-size: 24px;
+      margin-top: 30px;
+    }
+    .correct {
+      color: green;
+    }
+    .incorrect {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="quiz">
+    <div id="progress"></div>
+    <div class="question" id="question"></div>
+    <div class="options" id="options"></div>
+    <div id="result"></div>
+    <button id="retry" onclick="retryIncorrect()">틀린 문제 다시 풀기</button>
+  </div>
+
+  <script>
+    const allQuestions = [
+      { word: "chat", correct: "수다를 떨다", wrong: ["매력", "마녀"] },
+      { word: "charm", correct: "매력", wrong: ["가슴", "긁다"] },
+      { word: "chest", correct: "가슴", wrong: ["포대", "기쁨"] },
+      { word: "chip", correct: "조각", wrong: ["주문", "교회"] },
+      { word: "chin", correct: "턱", wrong: ["화음", "복숭아"] },
+      { word: "chill", correct: "냉기", wrong: ["혼돈", "물약"] },
+      { word: "chop", correct: "썰다", wrong: ["연장하다", "귀찮은 일"] },
+      { word: "church", correct: "교회", wrong: ["사탕", "미소"] },
+      { word: "chaos", correct: "혼돈", wrong: ["냉기", "이야기"] },
+      { word: "chemist", correct: "약사, 화학자", wrong: ["조각", "긁다"] },
+      { word: "chorus", correct: "합창", wrong: ["잡음", "체스"] },
+      { word: "peach", correct: "복숭아", wrong: ["마녀", "물약"] },
+      { word: "witch", correct: "마녀", wrong: ["수다쟁이", "교회"] },
+      { word: "pouch", correct: "주머니", wrong: ["가슴", "기쁨"] },
+      { word: "match", correct: "성냥", wrong: ["긁다", "혼돈"] },
+      { word: "stretch", correct: "쭉 펴다", wrong: ["썰다", "주문"] },
+      { word: "scratch", correct: "긁다", wrong: ["냉기", "기쁨"] }
+    ];
+
+    let current = 0;
+    let score = 0;
+    let incorrect = [];
+    let questions = [...allQuestions];
+
+    function shuffle(arr) {
+      return arr.sort(() => Math.random() - 0.5);
+    }
+
+    function showQuestion() {
+      document.getElementById("result").textContent = "";
+      if (current >= questions.length) {
+        if (incorrect.length === 0) {
+          document.getElementById("quiz").innerHTML = '<h2>축하합니다. 오늘의 목표를 달성하셨습니다.</h2>';
+        } else {
+          document.getElementById("retry").style.display = "block";
+          document.getElementById("result").innerHTML = `<div class='incorrect'>총 ${questions.length}문제 중 ${questions.length - incorrect.length}문제를 맞췄습니다.</div>`;
+        }
+        return;
+      }
+      const q = questions[current];
+      document.getElementById("question").textContent = `"${q.word}"의 뜻은?`;
+      document.getElementById("progress").textContent = `${current + 1} / ${questions.length}`;
+      const options = shuffle([q.correct, ...q.wrong]);
+      const container = document.getElementById("options");
+      container.innerHTML = "";
+      options.forEach(opt => {
+        const btn = document.createElement("button");
+        btn.textContent = opt;
+        btn.onclick = () => {
+          const result = document.getElementById("result");
+          if (opt === q.correct) {
+            score++;
+            result.innerHTML = `<div class='correct'>정답입니다!</div>`;
+          } else {
+            incorrect.push(q);
+            result.innerHTML = `<div class='incorrect'>틀렸습니다. 정답은: ${q.correct}</div>`;
+          }
+          current++;
+          setTimeout(() => showQuestion(), 1200);
+        };
+        container.appendChild(btn);
+      });
+    }
+
+    function retryIncorrect() {
+      if (incorrect.length === 0) return;
+      questions = [...incorrect];
+      incorrect = [];
+      current = 0;
+      document.getElementById("retry").style.display = "none";
+      document.getElementById("result").textContent = "";
+      showQuestion();
+    }
+
+    showQuestion();
+  </script>
+</body>
+</html>
