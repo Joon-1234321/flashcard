@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>뜻 → 영어 단어 퀴즈 (고른 정답 위치)</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #f9f9f9;
+    padding: 30px;
+    text-align: center;
+  }
+  .question {
+    margin: 30px auto;
+    padding: 20px;
+    background: #fff;
+    border-radius: 8px;
+    width: 80%;
+    max-width: 500px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  }
+  .choices {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .choices button {
+    margin: 8px;
+    padding: 10px 20px;
+    border-radius: 6px;
+    border: none;
+    background: #66aa66;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  .choices button:hover {
+    background: #4d8b4d;
+  }
+  #result, #retry-section {
+    margin-top: 20px;
+    font-weight: bold;
+  }
+  #congrats {
+    font-size: 24px;
+    color: green;
+    font-weight: bold;
+    margin-top: 40px;
+  }
+</style>
+</head>
+<body>
+
+<h1>뜻 → 영어 단어 고르기 퀴즈</h1>
+<div id="quiz"></div>
+<div id="result"></div>
+<div id="retry-section"></div>
+<div id="congrats"></div>
+
+<script>
+const questions = [
+  {"meaning":"충격","choices":["shark","shock","shape","shame"],"correct":1},
+  {"meaning":"그림자","choices":["trash","shovel","shadow","shave"],"correct":2},
+  {"meaning":"양","choices":["shape","shelf","shine","sheep"],"correct":3},
+  {"meaning":"닫다","choices":["shut","flush","shadow","shave"],"correct":0},
+  {"meaning":"형태","choices":["shovel","shape","shut","flash"],"correct":1},
+  {"meaning":"면도하다","choices":["shovel","trash","shave","squash"],"correct":2},
+  {"meaning":"선반","choices":["shock","shelf","cash","shark"],"correct":1},
+  {"meaning":"수치","choices":["shame","flash","sheep","shark"],"correct":0},
+  {"meaning":"삽","choices":["shelf","shovel","crush","flush"],"correct":1},
+  {"meaning":"상어","choices":["shame","shock","shark","shine"],"correct":2},
+  {"meaning":"빛나다","choices":["shine","shut","shape","squash"],"correct":0},
+  {"meaning":"현금","choices":["shelf","flash","trash","cash"],"correct":3},
+  {"meaning":"돌진하다","choices":["dash","shave","shark","shadow"],"correct":0},
+  {"meaning":"으깨다","choices":["mash","shovel","shut","shark"],"correct":0},
+  {"meaning":"쓰레기","choices":["trash","shame","shark","shine"],"correct":0},
+  {"meaning":"번쩍이다","choices":["shovel","flash","crush","shut"],"correct":1},
+  {"meaning":"짓누르다","choices":["crush","squash","flash","dash"],"correct":1},
+  {"meaning":"짓이기다","choices":["shelf","crush","shock","shine"],"correct":1},
+  {"meaning":"물을 쏟다","choices":["flush","shark","shape","sheep"],"correct":0},
+  {"meaning":"껍질","choices":["shark","shell","shame","shut"],"correct":1}
+];
+
+let current = 0;
+let wrongs = [];
+let retryMode = false;
+
+function renderQuestion() {
+  if (current >= questions.length) {
+    if (!retryMode && wrongs.length > 0) {
+      document.getElementById('result').innerText = "틀린 문제를 다시 풀어보세요!";
+      questions.length = 0;
+      questions.push(...wrongs);
+      wrongs = [];
+      retryMode = true;
+      current = 0;
+      renderQuestion();
+    } else if (retryMode && wrongs.length > 0) {
+      document.getElementById('result').innerText = "아직 틀린 문제가 있어요. 다시 도전해보세요!";
+      questions.length = 0;
+      questions.push(...wrongs);
+      wrongs = [];
+      current = 0;
+      renderQuestion();
+    } else {
+      document.getElementById('quiz').innerHTML = "";
+      document.getElementById('result').innerText = "";
+      document.getElementById('congrats').innerText = "🎉 Congratulations. You did a good job!";
+    }
+    return;
+  }
+
+  const q = questions[current];
+  const questionHTML = `
+    <div class="question">
+      <div><strong>문제 ${current + 1} / ${questions.length}</strong></div>
+      <div style="font-size: 20px; margin: 15px 0;">${q.meaning}</div>
+      <div class="choices">
+        ${q.choices.map((choice, idx) =>
+          `<button onclick="checkAnswer(${idx})">${String.fromCharCode(9312 + idx)} ${choice}</button>`
+        ).join('')}
+      </div>
+    </div>
+  `;
+  document.getElementById('quiz').innerHTML = questionHTML;
+  document.getElementById('result').innerText = "";
+}
+
+function checkAnswer(selected) {
+  const q = questions[current];
+  if (selected === q.correct) {
+    current++;
+    renderQuestion();
+  } else {
+    document.getElementById('result').innerText = `오답입니다. 정답: ${q.choices[q.correct]}`;
+    wrongs.push(q);
+    current++;
+    setTimeout(renderQuestion, 1500);
+  }
+}
+
+renderQuestion();
+</script>
+</body>
+</html>

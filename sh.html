@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>sh Flashcards</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    background: #f0f0f0;
+    padding: 20px;
+  }
+  .card {
+    width: 200px;
+    height: 150px;
+    margin: 10px;
+    perspective: 1000px;
+    cursor: pointer;
+    border-radius: 12px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    position: relative;
+  }
+  .card .front, .card .back {
+    width: 100%;
+    height: 100%;
+    border-radius: 12px;
+    position: absolute;
+    backface-visibility: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5em;
+    font-weight: bold;
+    transition: transform 0.6s;
+    padding: 10px;
+    box-sizing: border-box;
+    text-align: center;
+    color: white;
+  }
+  .card .back {
+    transform: rotateY(180deg);
+    flex-direction: column;
+  }
+  .card.flipped .front {
+    transform: rotateY(180deg);
+  }
+  .card.flipped .back {
+    transform: rotateY(360deg);
+  }
+  .meaning {
+    font-size: 0.9em;
+    margin-top: 10px;
+    font-weight: normal;
+  }
+</style>
+</head>
+<body>
+
+<!-- 카드 목록 (20개 단어) -->
+<div class="card" onclick="playAudio('shut', this)" style="background-color:#6699cc">
+  <div class="front"><span>shut</span></div>
+  <div class="back"><span>shut</span><br><span class='meaning'>닫다</span></div>
+</div>
+<div class="card" onclick="playAudio('shame', this)" style="background-color:#66aa66">
+  <div class="front"><span>shame</span></div>
+  <div class="back"><span>shame</span><br><span class='meaning'>수치</span></div>
+</div>
+<div class="card" onclick="playAudio('shine', this)" style="background-color:#6699cc">
+  <div class="front"><span>shine</span></div>
+  <div class="back"><span>shine</span><br><span class='meaning'>빛나다</span></div>
+</div>
+<div class="card" onclick="playAudio('shark', this)" style="background-color:#66aa66">
+  <div class="front"><span>shark</span></div>
+  <div class="back"><span>shark</span><br><span class='meaning'>상어</span></div>
+</div>
+<div class="card" onclick="playAudio('shell', this)" style="background-color:#6699cc">
+  <div class="front"><span>shell</span></div>
+  <div class="back"><span>shell</span><br><span class='meaning'>껍질</span></div>
+</div>
+<div class="card" onclick="playAudio('shock', this)" style="background-color:#66aa66">
+  <div class="front"><span>shock</span></div>
+  <div class="back"><span>shock</span><br><span class='meaning'>충격</span></div>
+</div>
+<div class="card" onclick="playAudio('shape', this)" style="background-color:#6699cc">
+  <div class="front"><span>shape</span></div>
+  <div class="back"><span>shape</span><br><span class='meaning'>형태</span></div>
+</div>
+<div class="card" onclick="playAudio('shave', this)" style="background-color:#66aa66">
+  <div class="front"><span>shave</span></div>
+  <div class="back"><span>shave</span><br><span class='meaning'>면도하다</span></div>
+</div>
+<div class="card" onclick="playAudio('sheep', this)" style="background-color:#6699cc">
+  <div class="front"><span>sheep</span></div>
+  <div class="back"><span>sheep</span><br><span class='meaning'>양</span></div>
+</div>
+<div class="card" onclick="playAudio('shelf', this)" style="background-color:#66aa66">
+  <div class="front"><span>shelf</span></div>
+  <div class="back"><span>shelf</span><br><span class='meaning'>선반</span></div>
+</div>
+<div class="card" onclick="playAudio('shovel', this)" style="background-color:#6699cc">
+  <div class="front"><span>shovel</span></div>
+  <div class="back"><span>shovel</span><br><span class='meaning'>삽</span></div>
+</div>
+<div class="card" onclick="playAudio('shadow', this)" style="background-color:#66aa66">
+  <div class="front"><span>shadow</span></div>
+  <div class="back"><span>shadow</span><br><span class='meaning'>그림자</span></div>
+</div>
+<div class="card" onclick="playAudio('cash', this)" style="background-color:#6699cc">
+  <div class="front"><span>cash</span></div>
+  <div class="back"><span>cash</span><br><span class='meaning'>현금</span></div>
+</div>
+<div class="card" onclick="playAudio('dash', this)" style="background-color:#66aa66">
+  <div class="front"><span>dash</span></div>
+  <div class="back"><span>dash</span><br><span class='meaning'>돌진하다</span></div>
+</div>
+<div class="card" onclick="playAudio('mash', this)" style="background-color:#6699cc">
+  <div class="front"><span>mash</span></div>
+  <div class="back"><span>mash</span><br><span class='meaning'>으깨다</span></div>
+</div>
+<div class="card" onclick="playAudio('trash', this)" style="background-color:#66aa66">
+  <div class="front"><span>trash</span></div>
+  <div class="back"><span>trash</span><br><span class='meaning'>쓰레기</span></div>
+</div>
+<div class="card" onclick="playAudio('flash', this)" style="background-color:#6699cc">
+  <div class="front"><span>flash</span></div>
+  <div class="back"><span>flash</span><br><span class='meaning'>번쩍이다</span></div>
+</div>
+<div class="card" onclick="playAudio('squash', this)" style="background-color:#66aa66">
+  <div class="front"><span>squash</span></div>
+  <div class="back"><span>squash</span><br><span class='meaning'>짓누르다</span></div>
+</div>
+<div class="card" onclick="playAudio('crush', this)" style="background-color:#6699cc">
+  <div class="front"><span>crush</span></div>
+  <div class="back"><span>crush</span><br><span class='meaning'>짓이기다</span></div>
+</div>
+<div class="card" onclick="playAudio('flush', this)" style="background-color:#66aa66">
+  <div class="front"><span>flush</span></div>
+  <div class="back"><span>flush</span><br><span class='meaning'>물을 쏟다</span></div>
+</div>
+
+<script>
+  function playAudio(word, el) {
+    const utterance = new SpeechSynthesisUtterance(word);
+    utterance.lang = "en-US";
+    speechSynthesis.speak(utterance);
+    el.classList.toggle('flipped');
+  }
+</script>
+</body>
+</html>
