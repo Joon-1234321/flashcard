@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>School Vocabulary Flashcards</title>
+<style>
+  :root{
+    --card-w: 340px;
+    --card-h: 220px;
+    --gap: 22px;
+  }
+  *{box-sizing:border-box}
+  body{
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+    margin:0; padding:24px;
+    background:#f5f7fb;
+    color:#111;
+  }
+  h1{
+    margin: 0 0 10px 0;
+    font-size: clamp(22px, 3vw, 36px);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  .controls{
+    display:flex; flex-wrap:wrap; gap:10px; align-items:center;
+    margin-bottom: 10px;
+  }
+  .controls button, .controls input[type="text"]{
+    font-size: 16px; padding:10px 14px; border-radius: 12px; border:1px solid #d0d7e2; background:#fff;
+  }
+  .controls .note{opacity:.7; font-size:14px}
+  .grid{
+    display:grid;
+    grid-template-columns: repeat(auto-fill, minmax(var(--card-w), 1fr));
+    gap: var(--gap);
+    align-items:stretch;
+  }
+  .card{
+    width: 100%;
+    height: var(--card-h);
+    perspective: 1200px;
+  }
+  .inner{
+    position:relative;
+    width:100%; height:100%;
+    border-radius: 20px;
+    box-shadow: 0 10px 22px rgba(0,0,0,.12);
+    transition: transform .7s cubic-bezier(.2,.8,.2,1);
+    transform-style: preserve-3d;
+    cursor:pointer;
+    outline: none;
+  }
+  .inner.flipped{ transform: rotateY(180deg); }
+  .face{
+    position:absolute; inset:0;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    border-radius:20px;
+    padding:18px;
+    backface-visibility:hidden;
+  }
+  .en{
+    font-size: clamp(28px, 4.6vw, 44px);
+    font-weight: 800;
+    letter-spacing: .5px;
+    line-height:1.1;
+    text-align:center;
+    margin:0;
+  }
+  .ko{
+    margin-top:12px;
+    font-size: clamp(20px, 3.2vw, 28px);
+    font-weight: 600;
+    opacity:.95;
+    text-align:center;
+    line-height:1.2;
+  }
+  .back{ transform: rotateY(180deg); }
+  .badge{
+    position:absolute; top:12px; right:14px;
+    font-size:12px; font-weight:700; padding:6px 10px;
+    border-radius: 999px; background: rgba(255,255,255,.25);
+    mix-blend-mode: screen;
+  }
+  .footer{
+    margin-top: 12px;
+    font-size: 13px; opacity:.7;
+  }
+  .sr-only { position: absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0; }
+</style>
+</head>
+<body>
+  <h1>플래시카드: 학교·활동·형용사·시간 표현</h1>
+  <div class="controls">
+    <button id="shuffleBtn" title="카드를 무작위로 섞기">Shuffle</button>
+    <button id="resetBtn" title="모든 카드를 앞면으로 되돌리기">Reset</button>
+    <button id="speakAllBtn" title="앞면 단어를 순서대로 읽기">Read All</button>
+    <span class="note">카드를 클릭하면: 단어가 <b>영어로 발음</b>되고 <b>뒷면</b>이 보입니다. 다시 클릭하면 앞면으로 돌아갑니다.</span>
+  </div>
+
+  <div class="grid" id="grid" aria-live="polite"></div>
+
+  <div class="footer">※ 일부 브라우저에서는 영국/미국 영어 음성이 다르게 들릴 수 있음. 크롬 최신 버전 권장.</div>
+
+<script>
+const data = [
+  // 학교 & 장소 & 과목 & 활동
+  {en:"school", ko:"학교"},
+  {en:"class", ko:"학급, 수업"},
+  {en:"playground", ko:"운동장, 놀이터"},
+  {en:"homeroom teacher", ko:"담임선생님"},
+  {en:"classmate", ko:"학급 친구"},
+  {en:"subject", ko:"과목"},
+  {en:"English", ko:"영어"},
+  {en:"math", ko:"수학"},
+  {en:"art", ko:"미술"},
+  {en:"soccer", ko:"축구"},
+  {en:"classroom", ko:"교실"},
+  {en:"homework", ko:"숙제"},
+  {en:"basketball", ko:"농구"},
+  {en:"movie", ko:"영화"},
+
+  // 동사
+  {en:"begin", ko:"시작하다"},
+  {en:"end", ko:"끝나다"},
+  {en:"wake up", ko:"일어나다"},
+  {en:"go", ko:"가다"},
+  {en:"walk", ko:"걷다"},
+  {en:"run", ko:"달리다"},
+  {en:"play", ko:"(축구 등)하다, 놀다"},
+  {en:"do", ko:"하다"},
+  {en:"finish", ko:"끝내다, 끝나다"},
+  {en:"join", ko:"가입하다"},
+
+  // 형용사
+  {en:"late", ko:"늦은, 늦게"}, // '늗게' 오타를 '늦게'로 교정
+  {en:"favorite", ko:"좋아하는"},
+  {en:"clean", ko:"깨끗한"},
+  {en:"small", ko:"작은"},
+
+  // 시간/부사구
+  {en:"after school", ko:"방과후에"},
+  {en:"today", ko:"오늘"},
+  {en:"yesterday", ko:"어제"},
+  {en:"tomorrow", ko:"내일"},
+];
+
+// 색상 팔레트 (높은 대비 확보)
+const palette = [
+  "#1E88E5", // blue
+  "#43A047", // green
+  "#8E24AA", // purple
+  "#FB8C00", // orange
+  "#00897B", // teal
+  "#E53935", // red
+  "#3949AB", // indigo
+  "#6D4C41", // brown
+];
+function getTextColor(hex){
+  // YIQ contrast
+  const c = hex.substring(1);
+  const r = parseInt(c.substr(0,2),16), g = parseInt(c.substr(2,2),16), b = parseInt(c.substr(4,2),16);
+  const yiq = ((r*299)+(g*587)+(b*114))/1000;
+  return yiq >= 160 ? "#111" : "#fff";
+}
+
+const grid = document.getElementById("grid");
+
+function render(list){
+  grid.innerHTML = "";
+  list.forEach((item, i)=>{
+    const bg = palette[i % palette.length];
+    const color = getTextColor(bg);
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `
+      <div class="inner" tabindex="0" role="button" aria-label="${item.en}">
+        <div class="face front" style="background:${bg}; color:${color}">
+          <div class="badge">Front</div>
+          <p class="en">${escapeHtml(item.en)}</p>
+        </div>
+        <div class="face back" style="background:${bg}; color:${color}">
+          <div class="badge">Back</div>
+          <p class="en">${escapeHtml(item.en)}</p>
+          <p class="ko">${escapeHtml(item.ko)}</p>
+        </div>
+      </div>
+    `;
+    const inner = card.querySelector(".inner");
+    const onFlip = ()=>{
+      speak(item.en);
+      inner.classList.toggle("flipped");
+    };
+    card.addEventListener("click", onFlip);
+    card.addEventListener("keydown", (e)=>{
+      if(e.key === "Enter" || e.key === " "){
+        e.preventDefault();
+        onFlip();
+      }
+    });
+    grid.appendChild(card);
+  });
+}
+
+// Simple shuffle
+function shuffle(array){
+  for(let i=array.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
+// TTS
+let cachedVoices = [];
+function loadVoices(){
+  cachedVoices = window.speechSynthesis.getVoices();
+}
+loadVoices();
+if (typeof speechSynthesis !== "undefined") {
+  speechSynthesis.onvoiceschanged = loadVoices;
+}
+function pickEnglishVoice(){
+  if(!cachedVoices || !cachedVoices.length) return null;
+  // Prefer US/UK English voices
+  const pref = cachedVoices.filter(v=> /en(-|_)?(US|GB|AU|CA|IN)?/i.test(v.lang));
+  return pref[0] || cachedVoices.find(v=>/en/i.test(v.lang)) || null;
+}
+function speak(text){
+  if (!("speechSynthesis" in window)) return;
+  const utter = new SpeechSynthesisUtterance(text);
+  const v = pickEnglishVoice();
+  if(v) utter.voice = v;
+  utter.rate = 0.9; // 약간 천천히
+  utter.pitch = 1.0;
+  utter.volume = 1.0;
+  // 앞글자 명확도 개선을 위해 아주 짧은 무음 토큰 삽입
+  // 일부 엔진에서는 공백만으로 충분하지 않아 마침표 추가
+  utter.text = " . " + text;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utter);
+}
+
+// Utilities
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, s=>({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[s]));
+}
+
+// Render initial
+render(data);
+
+// Controls
+document.getElementById("shuffleBtn").addEventListener("click", ()=>{
+  render(shuffle([...data]));
+});
+document.getElementById("resetBtn").addEventListener("click", ()=>{
+  render(data);
+});
+document.getElementById("speakAllBtn").addEventListener("click", async ()=>{
+  // 순차 재생: 각 카드 단어를 1.2초 간격으로 읽기
+  const interval = 1200;
+  for (let i=0; i<data.length; i++){
+    speak(data[i].en);
+    await new Promise(r=>setTimeout(r, interval));
+  }
+});
+</script>
+</body>
+</html>
