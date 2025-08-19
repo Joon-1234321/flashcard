@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Spelling Quiz — School Vocabulary (v3)</title>
+<style>
+:root{
+  --accent:#1e88e5;
+  --ok:#2e7d32;
+  --bad:#c62828;
+  --bg:#f6f8fc;
+  --card:#ffffff;
+  --text:#111;
+  --muted:#6b7280;
+  --radius:18px;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; padding:20px;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, "Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic", sans-serif;
+  background:var(--bg); color:var(--text);
+}
+h1{
+  margin:0 0 6px 0;
+  font-size:clamp(22px,3.5vw,36px);
+  letter-spacing:-.02em;
+}
+.sub{margin:0 0 18px 0; color:var(--muted); font-size:14px}
+.app{
+  max-width:900px; margin:0 auto;
+  background:var(--card); border-radius:var(--radius);
+  box-shadow:0 12px 28px rgba(0,0,0,.1);
+  padding:18px;
+}
+.controls{display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:12px}
+button,.btn{
+  appearance:none; border:1px solid #d0d7e2; background:#fff; color:#111;
+  padding:10px 14px; border-radius:12px; font-size:16px; cursor:pointer;
+}
+button.primary{background:var(--accent); color:#fff; border-color:transparent;}
+button.ghost{background:#fff}
+button:disabled{opacity:.5; cursor:not-allowed}
+select,input[type="number"],input[type="text"]{
+  padding:10px 12px; border-radius:12px; border:1px solid #d0d7e2; font-size:16px;
+}
+hr{border:none; border-top:1px solid #eef1f6; margin:14px 0}
+.progress{
+  width:100%; height:10px; background:#eef2f8; border-radius:999px; overflow:hidden;
+  margin:6px 0 14px 0;
+}
+.progress > div{height:100%; width:0%; background:linear-gradient(90deg, var(--accent), #43a047); transition:width .3s}
+.panel{
+  display:flex; flex-direction:column; gap:12px;
+  border:1px solid #edf0f6; border-radius:16px; padding:16px; background:#fff;
+}
+.clue{font-size:clamp(18px,2.4vw,22px)}
+.big{
+  font-size:clamp(22px,3vw,28px); font-weight:800;
+}
+.inputRow{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+#answer{
+  flex:1 1 280px; font-size:20px; padding:12px 14px; border-radius:12px; border:2px solid #d0d7e2;
+}
+#answer.correct{border-color:var(--ok); outline-color:var(--ok)}
+#answer.wrong{border-color:var(--bad); outline-color:var(--bad)}
+.feedback{min-height:24px; font-weight:700}
+.ok{color:var(--ok)}
+.bad{color:var(--bad)}
+.info{color:#1e40af}
+.kbd{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace; background:#eef2f8; padding:2px 6px; border-radius:6px; border:1px solid #e2e8f0}
+.grid2{display:grid; grid-template-columns:1fr; gap:16px}
+@media (min-width:760px){ .grid2{grid-template-columns:1fr 1fr} }
+.list{display:grid; gap:6px}
+.item{padding:10px 12px; border:1px solid #eef1f6; border-radius:12px; background:#fafcff}
+.item b{display:inline-block; min-width:120px}
+.table{width:100%; border-collapse:collapse; font-size:15px}
+.table th,.table td{border:1px solid #e5e9f2; padding:8px 10px; text-align:left}
+.table th{background:#f3f6fb}
+.small{font-size:13px; color:var(--muted)}
+.hidden{display:none !important}
+footer{margin-top:10px; color:var(--muted); font-size:13px; text-align:center}
+.rateWrap{display:flex; align-items:center; gap:8px}
+.rateWrap input{width:140px}
+.badge{display:inline-flex; align-items:center; gap:6px; font-size:12px; background:#eef4ff; color:#1e40af; border:1px solid #dbe7ff; padding:4px 8px; border-radius:999px}
+</style>
+</head>
+<body>
+  <div class="app">
+    <h1>스펠링 퀴즈 – School Vocabulary</h1>
+    <p class="sub">뜻(한국어)을 보고 영어 철자를 입력하세요. <span class="badge">Enter</span>로 채점.</p>
+    <div class="controls">
+      <button id="startBtn" class="primary">새 라운드 시작 (섞기)</button>
+      <button id="retryWrongBtn" class="ghost" disabled>오답만 다시 풀기</button>
+      <label class="small"><input type="checkbox" id="audioMode" /> 듣고 쓰기 모드</label>
+      <button id="playBtn" title="문항 발음"><span>🔊</span> 듣기</button>
+      <select id="voiceSelect" title="음성 선택"></select>
+      <div class="rateWrap small">
+        속도 <input type="range" id="rate" min="0.6" max="1.2" step="0.05" value="0.9">
+        <span id="rateVal">0.9</span>
+      </div>
+    </div>
+
+    <div class="progress" aria-hidden="true"><div id="bar"></div></div>
+
+    <div class="panel" id="quizPanel">
+      <div class="grid2">
+        <div>
+          <div class="clue">뜻</div>
+          <div class="big" id="clueKo">—</div>
+          <div class="small" id="helperEn" style="opacity:.7"></div>
+        </div>
+        <div class="list">
+          <div><b>남은 기회</b> <span id="lives">3</span>번</div>
+          <div><b>진행</b> <span id="status">0 / 0</span></div>
+        </div>
+      </div>
+      <div class="inputRow">
+        <input type="text" id="answer" placeholder="영어 철자를 입력하세요" autocomplete="off" autocapitalize="none" spellcheck="false" inputmode="latin-name" />
+        <button id="checkBtn" class="primary">채점</button>
+        <button id="revealBtn" class="ghost" title="정답 보기" disabled>정답</button>
+      </div>
+      <div class="feedback" id="feedback"></div>
+      <div class="small">Tip: 띄어쓰기가 있는 정답은 <span class="kbd">space</span>로 구분하여 입력하세요. 예) <i>homeroom teacher</i>, <i>wake up</i>, <i>after school</i>.</div>
+    </div>
+
+    <div id="resultPanel" class="hidden">
+      <h2>결과</h2>
+      <p><b id="scoreText">–</b></p>
+      <table class="table" id="wrongTable">
+        <thead><tr><th>#</th><th>뜻</th><th>정답</th><th>내 답</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div class="controls" style="margin-top:12px">
+        <button id="againAll" class="primary">전체 다시 풀기</button>
+        <button id="againWrong" class="ghost" disabled>오답만 다시 풀기</button>
+      </div>
+    </div>
+
+    <footer>음성(TTS)은 브라우저에 따라 품질이 다를 수 있습니다. Chrome/Edge 최신 버전을 권장합니다.</footer>
+  </div>
+
+<script>
+const WORDS = [
+  {en:"school", ko:"학교"},
+  {en:"class", ko:"학급, 수업"},
+  {en:"playground", ko:"운동장, 놀이터"},
+  {en:"homeroom teacher", ko:"담임선생님"},
+  {en:"classmate", ko:"학급 친구"},
+  {en:"subject", ko:"과목"},
+  {en:"English", ko:"영어"},
+  {en:"math", ko:"수학"},
+  {en:"art", ko:"미술"},
+  {en:"soccer", ko:"축구"},
+  {en:"classroom", ko:"교실"},
+  {en:"homework", ko:"숙제"},
+  {en:"basketball", ko:"농구"},
+  {en:"movie", ko:"영화"},
+  {en:"begin", ko:"시작하다"},
+  {en:"end", ko:"끝나다"},
+  {en:"wake up", ko:"일어나다"},
+  {en:"go", ko:"가다"},
+  {en:"walk", ko:"걷다"},
+  {en:"run", ko:"달리다"},
+  {en:"play", ko:"(축구 등)하다, 놀다"},
+  {en:"do", ko:"하다"},
+  {en:"finish", ko:"끝내다, 끝나다"},
+  {en:"join", ko:"가입하다"},
+  {en:"late", ko:"늦은, 늦게"},
+  {en:"favorite", ko:"좋아하는"},
+  {en:"clean", ko:"깨끗한"},
+  {en:"small", ko:"작은"},
+  {en:"after school", ko:"방과후에"},
+  {en:"today", ko:"오늘"},
+  {en:"yesterday", ko:"어제"},
+  {en:"tomorrow", ko:"내일"},
+];
+
+// ---------- Utilities ----------
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function norm(s){ return String(s).toLowerCase().replace(/\s+/g,' ').trim(); }
+function esc(s){ return String(s).replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;"," >":"&gt;","\"":"&quot;","'":"&#39;"}[m])); }
+function setBar(pct){ document.getElementById('bar').style.width = Math.max(0, Math.min(100,pct)) + '%'; }
+
+// ---------- TTS ----------
+let voices = [];
+let voiceSelect = document.getElementById('voiceSelect');
+function loadVoices(){
+  voices = speechSynthesis.getVoices();
+  if(voiceSelect.options.length === 0 || voiceSelect.options.length !== voices.length){
+    voiceSelect.innerHTML = "";
+    voices.filter(v=>/en(-|_)?(US|GB|AU|CA|IN)?/i.test(v.lang) || /en/i.test(v.lang)).forEach(v=>{
+      const opt = document.createElement('option');
+      opt.value = v.name;
+      opt.textContent = `${v.name} (${v.lang})`;
+      voiceSelect.appendChild(opt);
+    });
+  }
+}
+if('speechSynthesis' in window){
+  loadVoices();
+  speechSynthesis.onvoiceschanged = loadVoices;
+}
+function speak(text){
+  if(!('speechSynthesis' in window)) return;
+  const u = new SpeechSynthesisUtterance(" . " + text);
+  const rate = parseFloat(document.getElementById('rate').value || '0.9');
+  u.rate = rate; u.pitch = 1.0; u.volume = 1.0;
+  const chosen = voices.find(v=>v.name === voiceSelect.value);
+  if(chosen) u.voice = chosen;
+  speechSynthesis.cancel();
+  speechSynthesis.speak(u);
+}
+
+// ---------- Quiz State ----------
+const startBtn = document.getElementById('startBtn');
+const retryWrongBtn = document.getElementById('retryWrongBtn');
+const againAllBtn = document.getElementById('againAll');
+const againWrongBtn = document.getElementById('againWrong');
+const playBtn = document.getElementById('playBtn');
+const audioMode = document.getElementById('audioMode');
+const rate = document.getElementById('rate');
+const rateVal = document.getElementById('rateVal');
+
+const clueKo = document.getElementById('clueKo');
+const helperEn = document.getElementById('helperEn');
+const livesSpan = document.getElementById('lives');
+const statusSpan = document.getElementById('status');
+const answer = document.getElementById('answer');
+const checkBtn = document.getElementById('checkBtn');
+const revealBtn = document.getElementById('revealBtn');
+const feedback = document.getElementById('feedback');
+const quizPanel = document.getElementById('quizPanel');
+const resultPanel = document.getElementById('resultPanel');
+const wrongTableBody = document.querySelector('#wrongTable tbody');
+const scoreText = document.getElementById('scoreText');
+
+let ROUND = [];
+let IDX = 0;
+let LIVES = 3;
+let RESULTS = []; // {en, ko, ok, tries, userAnswers:[]}
+let NEED_REVEAL = false;
+let REQUIRE_CORRECT_REENTRY = false; // after reveal, require correct input to proceed
+
+function initRound(list){
+  ROUND = shuffle([...list]);
+  IDX = 0; LIVES = 3; RESULTS = [];
+  NEED_REVEAL = false; REQUIRE_CORRECT_REENTRY = false;
+  resultPanel.classList.add('hidden');
+  quizPanel.classList.remove('hidden');
+  retryWrongBtn.disabled = true;
+  renderItem();
+  answer.focus({preventScroll:true});
+}
+
+function renderItem(){
+  setBar(IDX/ROUND.length*100);
+  if(IDX >= ROUND.length){ return finish(); }
+  const item = ROUND[IDX];
+  clueKo.textContent = item.ko;
+  helperEn.textContent = audioMode.checked ? "(듣고 철자 입력)" : "";
+  livesSpan.textContent = LIVES;
+  statusSpan.textContent = `${IDX+1} / ${ROUND.length}`;
+  answer.value = "";
+  answer.classList.remove('correct','wrong');
+  feedback.textContent = "";
+  NEED_REVEAL = false;
+  REQUIRE_CORRECT_REENTRY = false;
+  revealBtn.disabled = true;
+  checkBtn.disabled = false;
+  if(audioMode.checked){ speak(item.en); }
+}
+
+function ensureResultSlot(){
+  const item = ROUND[IDX];
+  if(!RESULTS[IDX]) RESULTS[IDX] = {en:item.en, ko:item.ko, ok:false, tries:0, userAnswers:[]};
+}
+
+function check(){
+  const item = ROUND[IDX];
+  const user = norm(answer.value);
+  const correct = norm(item.en);
+  if(!user) return;
+  ensureResultSlot();
+
+  // Case A: normal attempts phase
+  if(!REQUIRE_CORRECT_REENTRY){
+    RESULTS[IDX].tries++;
+    RESULTS[IDX].userAnswers.push(user);
+    if(user === correct){
+      answer.classList.add('correct'); answer.classList.remove('wrong');
+      feedback.innerHTML = `<span class="ok">정답!</span>`;
+      RESULTS[IDX].ok = true;
+      setTimeout(()=>{ IDX++; LIVES = 3; renderItem(); }, 600);
+    }else{
+      LIVES--;
+      answer.classList.add('wrong'); answer.classList.remove('correct');
+      if(LIVES>0){
+        feedback.innerHTML = `<span class="bad">오답입니다. 다시 시도하세요. 남은 기회 ${LIVES}번.</span>`;
+        answer.focus(); answer.select();
+      }else{
+        // Out of lives → must press reveal; THEN must type correct answer to move on
+        feedback.innerHTML = `<span class="bad">오답입니다.</span> <b>정답</b> 버튼을 눌러 확인하세요.`;
+        NEED_REVEAL = true;
+        revealBtn.disabled = false;
+        checkBtn.disabled = true;
+        answer.blur();
+      }
+    }
+    return;
+  }
+
+  // Case B: after reveal — require correct re-entry, do not decrement lives
+  if(REQUIRE_CORRECT_REENTRY){
+    if(user === correct){
+      answer.classList.add('correct'); answer.classList.remove('wrong');
+      feedback.innerHTML = `<span class="ok">확인 입력 완료!</span>`;
+      setTimeout(()=>{ IDX++; LIVES = 3; renderItem(); }, 600);
+    }else{
+      answer.classList.add('wrong'); answer.classList.remove('correct');
+      feedback.innerHTML = `<span class="bad">정답 확인 후, 그대로 입력해야 합니다.</span>`;
+      answer.focus(); answer.select();
+    }
+  }
+}
+
+function reveal(){
+  if(!NEED_REVEAL) return;
+  const item = ROUND[IDX];
+  ensureResultSlot();
+  RESULTS[IDX].userAnswers.push("(reveal)");
+  feedback.innerHTML = `정답: <b>${esc(item.en)}</b> <span class="info">→ 정답을 입력해 보세요.</span>`;
+  REQUIRE_CORRECT_REENTRY = true;
+  NEED_REVEAL = false;
+  revealBtn.disabled = true;
+  checkBtn.disabled = false;
+  // Re-enable and focus answer for confirmation
+  answer.value = "";
+  answer.disabled = false;
+  answer.focus();
+  answer.select && answer.select();
+}
+
+function finish(){
+  quizPanel.classList.add('hidden');
+  resultPanel.classList.remove('hidden');
+  const total = ROUND.length;
+  const correctN = RESULTS.filter(r=>r && r.ok).length;
+  scoreText.innerHTML = `점수: <b>${correctN}</b> / ${total}`;
+  wrongTableBody.innerHTML = "";
+  const wrongs = RESULTS.map((r,i)=>({...r, idx:i})).filter(r=>r && !r.ok);
+  if(wrongs.length===0){
+    wrongTableBody.innerHTML = `<tr><td colspan="4">오답이 없습니다. 잘했어요! 🎉</td></tr>`;
+    againWrongBtn.disabled = true;
+    retryWrongBtn.disabled = true;
+  }else{
+    wrongs.forEach((r,i)=>{
+      const tr = document.createElement('tr');
+      const lastAns = r.userAnswers[r.userAnswers.length-1] || "";
+      tr.innerHTML = `<td>${i+1}</td><td>${esc(r.ko)}</td><td>${esc(r.en)}</td><td>${esc(lastAns)}</td>`;
+      wrongTableBody.appendChild(tr);
+    });
+    againWrongBtn.disabled = false;
+    retryWrongBtn.disabled = false;
+  }
+  setBar(100);
+}
+
+// Events
+startBtn.addEventListener('click', ()=> initRound(WORDS));
+retryWrongBtn.addEventListener('click', ()=>{
+  const wrongs = RESULTS.map((r,i)=>r).filter(r=>r && !r.ok);
+  if(wrongs.length>0){
+    const list = wrongs.map(w=>({en:w.en, ko:w.ko}));
+    initRound(list);
+  }
+});
+againAllBtn.addEventListener('click', ()=> initRound(WORDS));
+againWrongBtn.addEventListener('click', ()=>{
+  const wrongs = RESULTS.map(r=>r).filter(r=>r && !r.ok);
+  if(wrongs.length>0){
+    const list = wrongs.map(w=>({en:w.en, ko:w.ko}));
+    initRound(list);
+  }
+});
+
+checkBtn.addEventListener('click', check);
+revealBtn.addEventListener('click', reveal);
+playBtn.addEventListener('click', ()=>{
+  if(IDX < ROUND.length) speak(ROUND[IDX].en);
+});
+
+answer.addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter'){
+    e.preventDefault();
+    check();
+  }
+});
+
+audioMode.addEventListener('change', ()=>{
+  if(audioMode.checked && IDX < ROUND.length) speak(ROUND[IDX].en);
+  answer.focus();
+});
+rate.addEventListener('input', ()=>{
+  rateVal.textContent = rate.value;
+});
+
+// Start immediately
+initRound(WORDS);
+</script>
+</body>
+</html>
