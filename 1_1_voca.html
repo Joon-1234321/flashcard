@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>단어 타이핑 퀴즈</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; margin: 40px; }
+    #quiz-container { max-width: 500px; margin: auto; padding: 20px; border: 2px solid #ccc; border-radius: 10px; }
+    h2 { margin-bottom: 20px; }
+    input { width: 80%; padding: 10px; font-size: 16px; margin-top: 10px; }
+    button { padding: 10px 20px; margin: 10px; font-size: 16px; cursor: pointer; }
+    #feedback { margin-top: 20px; font-size: 18px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div id="quiz-container">
+    <h2 id="question"></h2>
+    <input type="text" id="answerInput" autocomplete="off" />
+    <br>
+    <button onclick="checkAnswer()">정답 확인</button>
+    <button onclick="clearInput()">지우기</button>
+    <p id="feedback"></p>
+  </div>
+
+  <script>
+    const quizData = [
+      { question: "학교", answer: "school" },
+      { question: "시작하다", answer: "begin" },
+      { question: "학급, 수업", answer: "class" },
+      { question: "일어나다(깨어나다)", answer: "wake up" },
+      { question: "가다", answer: "go" },
+      { question: "걸어가다", answer: "walk" },
+      { question: "늦게, 늦은", answer: "late" },
+      { question: "끝나다", answer: "end" },
+      { question: "달리다", answer: "run" },
+      { question: "운동장", answer: "playground" }
+    ];
+
+    let currentQuestion = 0;
+
+    function loadQuestion() {
+      if (currentQuestion < quizData.length) {
+        document.getElementById("question").innerText = 
+          `문제 ${currentQuestion + 1}. ${quizData[currentQuestion].question}`;
+        document.getElementById("answerInput").value = "";
+        document.getElementById("feedback").innerText = "";
+      } else {
+        document.getElementById("quiz-container").innerHTML = "<h2>🎉 축하합니다! 모든 문제를 완료했습니다!</h2>";
+      }
+    }
+
+    function checkAnswer() {
+      const userAnswer = document.getElementById("answerInput").value.trim().toLowerCase();
+      const correctAnswer = quizData[currentQuestion].answer.toLowerCase();
+      const feedback = document.getElementById("feedback");
+
+      if (userAnswer === correctAnswer) {
+        feedback.style.color = "green";
+        feedback.innerText = "정답입니다! ✅";
+        setTimeout(() => {
+          currentQuestion++;
+          loadQuestion();
+        }, 1000);
+      } else {
+        feedback.style.color = "red";
+        feedback.innerText = "틀렸습니다. 다시 시도하세요.";
+      }
+    }
+
+    function clearInput() {
+      document.getElementById("answerInput").value = "";
+    }
+
+    loadQuestion();
+  </script>
+</body>
+</html>
