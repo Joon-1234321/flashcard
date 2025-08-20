@@ -1,0 +1,293 @@
+좋아요! 기존 것과 **분리된 독립 버전**으로, 요청하신 5문장만 들어 있는 파일입니다.
+(문제번호 표시, 클릭/드래그 정렬, 중복 방지 + 흔들림/토스트 피드백, 정답 맞아야 ‘다음 문제’ 활성화, 불필요한 설명 없음—all 유지)
+
+```html
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>문장 순서 배열 퀴즈 (세트 B)</title>
+  <style>
+    body {
+      font-family: "Arial", sans-serif;
+      background: #f5f7fa;
+      display: flex; justify-content: center; align-items: center;
+      height: 100vh; margin: 0;
+    }
+    .quiz-box {
+      position: relative;
+      background: #fff; padding: 32px; border-radius: 20px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+      width: 86%; max-width: 760px; text-align: center;
+    }
+    .qnum { position: absolute; top: 16px; right: 20px; font-weight: 700; color: #607d8b; font-size: 14px; }
+    .word-bank, .answer-area {
+      margin: 16px auto; padding: 16px; min-height: 72px;
+      border: 2px dashed #bbb; border-radius: 12px; transition: border-color .2s;
+    }
+    .label { font-size: 13px; color: #90a4ae; letter-spacing: .3px; text-align:left; margin: 6px 10% 0; }
+    .chip {
+      display: inline-block; margin: 8px; padding: 12px 18px;
+      border-radius: 24px; cursor: grab; font-size: 20px;
+      color: #fff; user-select: none; transition: transform .08s, box-shadow .08s;
+    }
+    .chip:active { cursor: grabbing; transform: scale(0.97); }
+    .chip.disabled { opacity: .38; cursor: not-allowed; }
+    .controls { margin-top: 10px; }
+    button {
+      padding: 12px 20px; font-size: 16px; margin: 6px; cursor: pointer;
+      border: none; border-radius: 8px; background: #4caf50; color: #fff;
+      transition: background .2s, transform .05s;
+    }
+    button:hover:not(:disabled){ background: #43a047; }
+    button:disabled { background: #cfd8dc; cursor: not-allowed; }
+    #result { font-weight: 700; margin-top: 10px; font-size: 20px; min-height: 28px; }
+
+    /* 중복 시 피드백 */
+    @keyframes shake {
+      10%, 90% { transform: translateX(-2px); }
+      20%, 80% { transform: translateX(4px); }
+      30%, 50%, 70% { transform: translateX(-6px); }
+      40%, 60% { transform: translateX(6px); }
+    }
+    .shake { animation: shake .35s; }
+    .highlight { border-color: #e53935 !important; }
+
+    /* 토스트 */
+    .toast {
+      position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%);
+      background: rgba(38,50,56,.95); color: #fff;
+      padding: 10px 16px; border-radius: 8px; font-size: 14px;
+      box-shadow: 0 6px 14px rgba(0,0,0,.2); pointer-events: none; opacity: 0; transition: opacity .2s;
+    }
+    .toast.show { opacity: 1; }
+    .sr-live { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+  </style>
+</head>
+<body>
+  <div class="quiz-box">
+    <div id="qnum" class="qnum">1 / 5</div>
+
+    <div class="label">WORD BANK</div>
+    <div id="wordBank" class="word-bank"></div>
+
+    <div class="label">YOUR ANSWER</div>
+    <div id="answerArea" class="answer-area"></div>
+
+    <div class="controls">
+      <button id="checkBtn">정답 확인</button>
+      <button id="undoBtn">되돌리기</button>
+      <button id="resetBtn">초기화</button>
+      <button id="nextBtn" disabled>다음 문제</button>
+    </div>
+
+    <div id="result"></div>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <div id="live" class="sr-live" aria-live="assertive"></div>
+  </div>
+
+  <script>
+    // 세트 B: 요청하신 5문장만 포함
+    const questions = [
+      ["The", "class", "ends", "at", "12", "o'clock"],
+      ["I", "woke", "up", "late", "today"],
+      ["She", "goes", "to", "school", "every", "day"],
+      ["I", "will", "run", "on", "the", "playground"],
+      ["I", "walked", "to", "school", "yesterday"]
+    ];
+
+    const colors = ["#ff6f61","#42a5f5","#66bb6a","#ffa726","#ab47bc","#26c6da","#7e57c2","#26a69a"];
+    const wordBank = document.getElementById('wordBank');
+    const answerArea = document.getElementById('answerArea');
+    const result = document.getElementById('result');
+    const nextBtn = document.getElementById('nextBtn');
+    const qnumEl = document.getElementById('qnum');
+    const toast = document.getElementById('toast');
+    const live = document.getElementById('live');
+
+    let currentQ = 0;
+    let chosen = [];
+    let bankChips = [];
+
+    function shuffle(arr){ return arr.slice().sort(() => Math.random() - 0.5); }
+
+    function showToast(msg){
+      toast.textContent = msg;
+      live.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 900);
+    }
+    function pulseError(el){
+      el.classList.add('shake','highlight');
+      setTimeout(()=>{ el.classList.remove('shake','highlight'); }, 400);
+    }
+
+    function makeChip(token, inBank = false){
+      const chip = document.createElement('span');
+      chip.className = 'chip';
+      chip.textContent = token;
+      chip.style.background = colors[Math.floor(Math.random()*colors.length)];
+      chip.draggable = true;
+
+      chip.onclick = () => {
+        if (inBank) {
+          if (chip.classList.contains('disabled')) return;
+          if (tokenAlreadyInAnswer(token)) { showToast("이미 선택한 단어예요."); pulseError(answerArea); pulseError(chip); return; }
+          moveFromBankToAnswer(token, chip);
+        } else {
+          removeFromAnswer(chip);
+        }
+      };
+
+      chip.addEventListener('dragstart', (e) => {
+        if (inBank && chip.classList.contains('disabled')) { e.preventDefault(); return; }
+        chip.classList.add('dragging');
+        e.dataTransfer.setData('text/plain', JSON.stringify({ token, from: inBank ? 'bank' : 'answer' }));
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      chip.addEventListener('dragend', () => chip.classList.remove('dragging'));
+      return chip;
+    }
+
+    function tokenAlreadyInAnswer(token){
+      return [...answerArea.querySelectorAll('.chip')].some(c => c.textContent === token);
+    }
+
+    function moveFromBankToAnswer(token, bankChip){
+      const aChip = makeChip(token, false);
+      answerArea.appendChild(aChip);
+      chosen.push(token);
+      bankChip.classList.add('disabled');
+      result.textContent = '';
+      nextBtn.disabled = true;
+    }
+
+    function removeFromAnswer(answerChip){
+      const token = answerChip.textContent;
+      const idx = chosen.indexOf(token);
+      if (idx !== -1) chosen.splice(idx, 1);
+      answerChip.remove();
+      const target = bankChips.find(c => c.textContent === token && c.classList.contains('disabled'));
+      if (target) target.classList.remove('disabled');
+      result.textContent = '';
+      nextBtn.disabled = true;
+    }
+
+    function getDragAfterElement(container, x){
+      const els = [...container.querySelectorAll('.chip:not(.dragging)')];
+      return els.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = x - (box.left + box.width / 2);
+        if (offset < 0 && offset > closest.offset) return { offset, element: child };
+        return closest;
+      }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+    answerArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      const dragging = document.querySelector('.chip.dragging');
+      if (!dragging) return;
+      const payload = JSON.parse(e.dataTransfer.getData('text/plain') || '{}');
+      const afterElement = getDragAfterElement(answerArea, e.clientX);
+
+      if (payload.from === 'answer') {
+        if (afterElement == null) answerArea.appendChild(dragging);
+        else answerArea.insertBefore(dragging, afterElement);
+      }
+    });
+
+    answerArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      const payload = JSON.parse(e.dataTransfer.getData('text/plain') || '{}');
+      const afterElement = getDragAfterElement(answerArea, e.clientX);
+
+      if (payload.from === 'bank') {
+        if (tokenAlreadyInAnswer(payload.token)) {
+          showToast("이미 선택한 단어예요.");
+          pulseError(answerArea);
+          const bankChipDup = bankChips.find(c => c.textContent === payload.token);
+          if (bankChipDup) pulseError(bankChipDup);
+          return;
+        }
+        const bankChip = bankChips.find(c => c.textContent === payload.token && !c.classList.contains('disabled'));
+        if (!bankChip) return;
+
+        const newChip = makeChip(payload.token, false);
+        if (afterElement == null) answerArea.appendChild(newChip);
+        else answerArea.insertBefore(newChip, afterElement);
+
+        chosen.push(payload.token);
+        bankChip.classList.add('disabled');
+        result.textContent = '';
+        nextBtn.disabled = true;
+      }
+      recomputeChosenFromDOM();
+    });
+
+    function recomputeChosenFromDOM(){
+      chosen = [...answerArea.querySelectorAll('.chip')].map(c => c.textContent);
+    }
+
+    function checkAnswer(){
+      const q = questions[currentQ];
+      if (chosen.length !== q.length){
+        result.textContent = "⚠️ 모든 단어를 선택하세요.";
+        result.style.color = "#b26b00";
+        nextBtn.disabled = true;
+        pulseError(answerArea);
+        return;
+      }
+      const ok = q.every((w, i) => w === chosen[i]);
+      if (ok){
+        result.textContent = "✅ 정답! 잘했어요.";
+        result.style.color = "green";
+        nextBtn.disabled = false;
+      } else {
+        result.textContent = "❌ 오답입니다. 다시 시도해 보세요.";
+        result.style.color = "crimson";
+        nextBtn.disabled = true;
+        pulseError(answerArea);
+      }
+    }
+
+    function undo(){
+      const chips = answerArea.querySelectorAll('.chip');
+      if (chips.length === 0) return;
+      removeFromAnswer(chips[chips.length-1]);
+    }
+
+    function resetQuiz(){ loadQuestion(currentQ); }
+    function nextQuestion(){
+      currentQ = (currentQ + 1) % questions.length;
+      loadQuestion(currentQ);
+    }
+
+    function loadQuestion(idx){
+      chosen = [];
+      wordBank.innerHTML = '';
+      answerArea.innerHTML = '';
+      result.textContent = '';
+      nextBtn.disabled = true;
+      qnumEl.textContent = `${idx+1} / ${questions.length}`;
+
+      const shuffled = shuffle(questions[idx]);
+      bankChips = shuffled.map(tok => {
+        const chip = makeChip(tok, true);
+        wordBank.appendChild(chip);
+        return chip;
+      });
+    }
+
+    document.getElementById('checkBtn').onclick = checkAnswer;
+    document.getElementById('undoBtn').onclick = undo;
+    document.getElementById('resetBtn').onclick = resetQuiz;
+    nextBtn.onclick = nextQuestion;
+
+    loadQuestion(currentQ);
+  </script>
+</body>
+</html>
+```
+
+원하시면 이 세트도 \*\*덩어리 블록(예: “at 12 o'clock”)\*\*으로 묶는 난이도-하 버전 하나 더 만들어 드릴게요.
